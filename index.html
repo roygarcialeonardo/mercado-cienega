@@ -108,7 +108,22 @@ th{background:var(--fondo);}
 .copiar{margin-left:8px;}
 footer{background:var(--verde-osc); color:#cfe0d8; text-align:center; padding:22px 14px; font-size:.88rem; margin-top:30px;}
 footer b{color:#fff;}
-@media(max-width:600px){ .hfila{gap:8px;} .logo{font-size:1.2rem;} .tasa{display:none;} }
+/* carrusel */
+.carrusel{position:relative; border-radius:14px; overflow:hidden; margin:4px 0 8px; height:250px; box-shadow:0 4px 14px rgba(0,0,0,.15);}
+.carrusel .slides{position:relative; width:100%; height:100%;}
+.carrusel .slide{position:absolute; inset:0; opacity:0; transition:opacity .7s;}
+.carrusel .slide.act{opacity:1;}
+.carrusel .slide img{width:100%; height:100%; object-fit:cover;}
+.carrusel .leyenda{position:absolute; left:0; right:0; bottom:0; padding:40px 20px 18px; background:linear-gradient(transparent, rgba(0,0,0,.68)); color:#fff;}
+.carrusel .leyenda h3{font-size:1.45rem; margin-bottom:4px; text-shadow:0 2px 6px rgba(0,0,0,.5);}
+.carrusel .leyenda p{font-size:.95rem; opacity:.93;}
+.carrusel .flecha{position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.4); color:#fff; border:none; width:38px; height:38px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:2;}
+.carrusel .izq{left:10px;} .carrusel .der{right:10px;}
+.carrusel .puntos{position:absolute; bottom:12px; left:0; right:0; text-align:center; z-index:2;}
+.carrusel .puntos span{display:inline-block; width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.5); margin:0 4px; cursor:pointer;}
+.carrusel .puntos span.act{background:#fff;}
+@media(max-width:600px){ .hfila{gap:8px;} .logo{font-size:1.2rem;} .tasa{display:none;}
+.carrusel{height:168px;} .carrusel .leyenda{padding:28px 14px 12px;} .carrusel .leyenda h3{font-size:1.05rem;} .carrusel .leyenda p{font-size:.8rem;} }
 </style>
 </head>
 <body>
@@ -131,6 +146,25 @@ footer b{color:#fff;}
 <main>
   <!-- INICIO -->
   <div id="v-inicio" class="vista act">
+    <div class="carrusel" id="carrusel">
+      <div class="slides">
+        <div class="slide act">
+          <img src="banner1.jpg" alt="Compra y vende">
+          <div class="leyenda"><h3>🛒 Compra y vende en tu zona</h3><p>Miles de productos cerca de ti, en CUP o USD</p></div>
+        </div>
+        <div class="slide">
+          <img src="banner2.jpg" alt="Compra desde tu teléfono">
+          <div class="leyenda"><h3>📱 Compra desde tu teléfono</h3><p>Coordina por WhatsApp con el vendedor</p></div>
+        </div>
+        <div class="slide">
+          <img src="banner3.jpg" alt="Vende tus productos">
+          <div class="leyenda"><h3>📢 Vende tus productos</h3><p>Publica gratis · tu anuncio dura 3 meses</p></div>
+        </div>
+      </div>
+      <button class="flecha izq" onclick="carrMover(-1)">‹</button>
+      <button class="flecha der" onclick="carrMover(1)">›</button>
+      <div class="puntos" id="carrPuntos"></div>
+    </div>
     <div id="secDest"></div>
     <h2 class="sec">🛍️ Productos</h2>
     <div class="grid" id="grid"></div>
@@ -709,6 +743,38 @@ async function guardarAjustes(){
   document.getElementById('aErr').innerHTML='<div class="okmsg">✅ Ajustes guardados.</div>';
 }
 
+/* ================= carrusel ================= */
+let carrI = 0, carrT = null;
+const CARR_N = 3;
+function carrPintar(){
+  const slides = document.querySelectorAll('#carrusel .slide');
+  slides.forEach(function(s,i){ s.className = 'slide'+(i===carrI?' act':''); });
+  const pts = document.getElementById('carrPuntos').children;
+  for(let i=0;i<pts.length;i++) pts[i].className = i===carrI?'act':'';
+}
+function carrMover(d){ carrI = (carrI+d+CARR_N)%CARR_N; carrPintar(); carrReiniciar(); }
+function carrIr(i){ carrI = i; carrPintar(); carrReiniciar(); }
+function carrReiniciar(){ clearInterval(carrT); carrT = setInterval(function(){ carrI=(carrI+1)%CARR_N; carrPintar(); }, 5000); }
+function carrInit(){
+  const pts = document.getElementById('carrPuntos');
+  for(let i=0;i<CARR_N;i++){
+    const s = document.createElement('span');
+    s.className = i===0?'act':'';
+    s.onclick = (function(n){ return function(){ carrIr(n); }; })(i);
+    pts.appendChild(s);
+  }
+  const c = document.getElementById('carrusel');
+  c.addEventListener('mouseenter', function(){ clearInterval(carrT); });
+  c.addEventListener('mouseleave', carrReiniciar);
+  let tx = 0;
+  c.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, {passive:true});
+  c.addEventListener('touchend', function(e){
+    const dx = e.changedTouches[0].clientX - tx;
+    if(Math.abs(dx) > 40) carrMover(dx < 0 ? 1 : -1);
+  }, {passive:true});
+  carrReiniciar();
+}
+
 /* ================= inicio ================= */
 async function recargarCats(){
   const r = await api('categorias_list', {});
@@ -731,6 +797,7 @@ function pintarUser(){
   await cargarTasa();
   await recargarCats(); pintarCats();
   await cargarProductos();
+  carrInit();
   // intento silencioso de refrescar la tasa
   try{ const r = await api('tasa_auto', {}); if(r.auto){ await cargarTasa(); } }catch(e){}
 })();
