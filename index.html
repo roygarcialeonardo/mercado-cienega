@@ -111,20 +111,19 @@ footer b{color:#fff;}
 /* carrusel */
 .carrusel{position:relative; border-radius:14px; overflow:hidden; margin:4px 0 8px; height:250px; box-shadow:0 4px 14px rgba(0,0,0,.15);}
 .carrusel .slides{position:relative; width:100%; height:100%;}
-.carrusel .slide{position:absolute; inset:0; opacity:0; transition:opacity .7s; cursor:pointer;}
+.carrusel .slide{position:absolute; inset:0; opacity:0; transition:opacity .7s;}
 .carrusel .slide.act{opacity:1;}
 .carrusel .slide img{width:100%; height:100%; object-fit:cover;}
-.carrusel .leyenda{position:absolute; top:0; right:0; bottom:0; width:44%; display:flex; flex-direction:column; justify-content:center; padding:20px 26px 20px 10px; color:var(--texto);}
-.carrusel .leyenda h3{font-size:1.7rem; margin-bottom:6px; color:var(--verde-osc);}
-.carrusel .leyenda p{font-size:1rem; color:var(--gris);}
-.carrusel .leyenda .ver{display:inline-block; margin-top:12px; background:var(--verde); color:#fff; font-weight:700; padding:10px 20px; border-radius:24px; font-size:.92rem; width:fit-content;}
+.carrusel .leyenda{position:absolute; left:0; right:0; bottom:0; padding:40px 20px 18px; background:linear-gradient(transparent, rgba(0,0,0,.68)); color:#fff;}
+.carrusel .leyenda h3{font-size:1.45rem; margin-bottom:4px; text-shadow:0 2px 6px rgba(0,0,0,.5);}
+.carrusel .leyenda p{font-size:.95rem; opacity:.93;}
 .carrusel .flecha{position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.4); color:#fff; border:none; width:38px; height:38px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:2;}
 .carrusel .izq{left:10px;} .carrusel .der{right:10px;}
 .carrusel .puntos{position:absolute; bottom:12px; left:0; right:0; text-align:center; z-index:2;}
 .carrusel .puntos span{display:inline-block; width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.5); margin:0 4px; cursor:pointer;}
 .carrusel .puntos span.act{background:#fff;}
 @media(max-width:600px){ .hfila{gap:8px;} .logo{font-size:1.2rem;} .tasa{display:none;}
-.carrusel{height:168px;} .carrusel .leyenda{width:54%; padding:12px 12px 12px 6px;} .carrusel .leyenda h3{font-size:1.02rem;} .carrusel .leyenda p{font-size:.76rem;} .carrusel .leyenda .ver{padding:7px 14px; font-size:.76rem; margin-top:8px;} }
+.carrusel{height:168px;} .carrusel .leyenda{padding:28px 14px 12px;} .carrusel .leyenda h3{font-size:1.05rem;} .carrusel .leyenda p{font-size:.8rem;} }
 </style>
 </head>
 <body>
@@ -149,41 +148,17 @@ footer b{color:#fff;}
   <div id="v-inicio" class="vista act">
     <div class="carrusel" id="carrusel">
       <div class="slides">
-        <div class="slide act" onclick="carrCat('Alimentos')">
-          <img src="banner1.jpg" alt="Alimentos">
-          <div class="leyenda"><h3>🥬 Alimentos frescos</h3><p>Del campo a tu mesa</p><span class="ver">Ver productos →</span></div>
+        <div class="slide act">
+          <img src="banner1.jpg" alt="Compra y vende">
+          <div class="leyenda"><h3>🛒 Compra y vende en tu zona</h3><p>Miles de productos cerca de ti, en CUP o USD</p></div>
         </div>
-        <div class="slide" onclick="carrCat('Ropa y calzado')">
-          <img src="banner2.jpg" alt="Ropa y calzado">
-          <div class="leyenda"><h3>👕 Ropa y calzado</h3><p>Viste a la moda</p><span class="ver">Ver productos →</span></div>
+        <div class="slide">
+          <img src="banner2.jpg" alt="Compra desde tu teléfono">
+          <div class="leyenda"><h3>📱 Compra desde tu teléfono</h3><p>Coordina por WhatsApp con el vendedor</p></div>
         </div>
-        <div class="slide" onclick="carrCat('Electrónica')">
-          <img src="banner3.jpg" alt="Electrónica">
-          <div class="leyenda"><h3>📱 Electrónica</h3><p>Tecnología al mejor precio</p><span class="ver">Ver productos →</span></div>
-        </div>
-        <div class="slide" onclick="carrCat('Hogar')">
-          <img src="banner4.jpg" alt="Hogar">
-          <div class="leyenda"><h3>🏠 Todo para tu hogar</h3><p>Lo que tu casa necesita</p><span class="ver">Ver productos →</span></div>
-        </div>
-        <div class="slide" onclick="carrCat('Belleza y cuidado')">
-          <img src="banner5.jpg" alt="Belleza y cuidado">
-          <div class="leyenda"><h3>💄 Belleza y cuidado</h3><p>Luce siempre bien</p><span class="ver">Ver productos →</span></div>
-        </div>
-        <div class="slide" onclick="carrCat('Servicios')">
-          <img src="banner6.jpg" alt="Servicios">
-          <div class="leyenda"><h3>🔧 Servicios</h3><p>Profesionales cerca de ti</p><span class="ver">Ver productos →</span></div>
-        </div>
-        <div class="slide" onclick="carrCat('Vehículos y repuestos')">
-          <img src="banner7.jpg" alt="Vehículos y repuestos">
-          <div class="leyenda"><h3>🚗 Vehículos y repuestos</h3><p>Para tu carro o moto</p><span class="ver">Ver productos →</span></div>
-        </div>
-        <div class="slide" onclick="carrCat('Mascotas')">
-          <img src="banner8.jpg" alt="Mascotas">
-          <div class="leyenda"><h3>🐾 Mascotas</h3><p>Todo para tus animales</p><span class="ver">Ver productos →</span></div>
-        </div>
-        <div class="slide" onclick="carrCat('Otros')">
-          <img src="banner9.jpg" alt="Otros">
-          <div class="leyenda"><h3>🎁 Y mucho más</h3><p>Descubre todas las ofertas</p><span class="ver">Ver productos →</span></div>
+        <div class="slide">
+          <img src="banner3.jpg" alt="Vende tus productos">
+          <div class="leyenda"><h3>📢 Vende tus productos</h3><p>Publica gratis · tu anuncio dura 3 meses</p></div>
         </div>
       </div>
       <button class="flecha izq" onclick="carrMover(-1)">‹</button>
@@ -770,8 +745,7 @@ async function guardarAjustes(){
 
 /* ================= carrusel ================= */
 let carrI = 0, carrT = null;
-const CARR_N = 9;
-function carrCat(c){ filtrarCat(c); }
+const CARR_N = 3;
 function carrPintar(){
   const slides = document.querySelectorAll('#carrusel .slide');
   slides.forEach(function(s,i){ s.className = 'slide'+(i===carrI?' act':''); });
