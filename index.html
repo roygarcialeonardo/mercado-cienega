@@ -158,7 +158,7 @@ footer b{color:#fff;}
         </div>
         <div class="slide">
           <img src="banner3.jpg" alt="Vende tus productos">
-          <div class="leyenda"><h3>📢 Vende tus productos</h3><p>Publica gratis · tu anuncio dura 3 meses</p></div>
+          <div class="leyenda"><h3>📢 Vende tus productos</h3><p>Anuncia tus productos · 100 CUP al mes</p></div>
         </div>
       </div>
       <button class="flecha izq" onclick="carrMover(-1)">‹</button>
@@ -217,7 +217,7 @@ footer b{color:#fff;}
 <footer>
   <b>Mercado Ciénega</b> · compra y vende en tu zona<br>
   <span id="footTasa"></span><br>
-  Los anuncios duran 3 meses. Precios de referencia según tasa indicada.
+  Los anuncios duran 1 mes (renovable). Precios de referencia según tasa indicada.
 </footer>
 
 <script>
@@ -478,7 +478,7 @@ function abrirPublicar(){
   imgsSel = [];
   let opts = S.cats.map(function(c){return '<option>'+esc(c)+'</option>';}).join('');
   abrirModal('<h3>📢 Publicar producto</h3>'+
-    '<div class="alerta">Publicar cuesta <b id="p_precio_pub">…</b>. Tu anuncio se mostrará cuando se confirme tu pago y estará visible por 3 meses. Las fotos se comprimen solas para que pesen poco.</div>'+
+    '<div class="alerta">Publicar cuesta <b id="p_precio_pub">…</b>. Tu anuncio se mostrará cuando se confirme tu pago y estará visible por 1 mes. Las fotos se comprimen solas para que pesen poco.</div>'+
     '<label>Título</label><input type="text" id="p_tit" maxlength="80">'+
     '<label>Categoría</label><select id="p_cat">'+opts+'</select>'+
     '<div style="display:flex;gap:12px"><div style="flex:1"><label>Precio</label><input type="number" id="p_pre" min="1" step="any"></div>'+
@@ -618,8 +618,29 @@ async function eliminarProd(id){
   if(r.ok) cargarMios(); else alert(r.error);
 }
 async function renovar(id){
-  const r = await api('producto_renovar', {id:id});
-  if(r.ok){ alert('✅ Anuncio renovado por 3 meses más.'); cargarMios(); } else alert(r.error);
+  const d = await api('destacar_info', {});
+  if(!d.ok){ alert(d.error); return; }
+  const m = d.metodos;
+  const prCUP = fmtCUP(d.publicar_precio_cup)+' CUP';
+  abrirModal('<h3>🔄 Renovar anuncio (1 mes): '+prCUP+'</h3>'+
+    '<div class="alerta">Tu anuncio se extenderá 1 mes más cuando se apruebe tu pago.</div>'+
+    '<div class="metodo"><h4>📱 Transfermóvil</h4>'+
+      (m.transfermovil? 'Transfiere a la cuenta <code>'+esc(m.transfermovil)+'</code> y escribe el # de transacción abajo.'
+                      : '<span class="nota">Número pendiente — pregúntame por WhatsApp.</span>')+'</div>'+
+    '<div class="metodo"><h4>💠 USDT (TRC20)</h4>Envía a:<br><code>'+esc(m.usdt)+'</code>'+
+      '<button class="mini-btn copiar" onclick="navigator.clipboard.writeText(\''+esc(m.usdt)+'\');this.textContent=\'✓\'">Copiar</button></div>'+
+    '<div class="metodo"><h4>🤝 Efectivo</h4>'+esc(m.efectivo)+'</div>'+
+    '<label>Método que usaste</label><select id="rn_met">'+
+      '<option value="transfermovil">Transfermóvil</option><option value="usdt">USDT</option><option value="efectivo">Efectivo</option></select>'+
+    '<label># de transacción o referencia</label><input type="text" id="rn_ref" placeholder="Ej: 12345678">'+
+    '<button class="btn bloque" onclick="enviarRenovar(\''+id+'\')">Enviar solicitud</button><div id="rnErr"></div>');
+}
+async function enviarRenovar(id){
+  const r = await api('producto_renovar', {id:id,
+    metodo:document.getElementById('rn_met').value,
+    referencia:document.getElementById('rn_ref').value});
+  if(!r.ok){ document.getElementById('rnErr').innerHTML = '<div class="error">'+esc(r.error)+'</div>'; return; }
+  cerrarModal(); alert('✅ '+r.msg); mostrar('mios');
 }
 
 /* ================= destacar (pagado) ================= */
@@ -757,7 +778,7 @@ async function adminAjustes(){
   if(!r.ok){ box.innerHTML = '<div class="error">'+esc(r.error)+'</div>'; return; }
   const c = r.config;
   const campos = [
-    ['publicar_precio_cup','Precio por publicar un anuncio (CUP)'],
+    ['publicar_precio_cup','Precio mensual del anuncio (CUP)'],
     ['destacado_precio_cup','Precio del destacado (CUP)'],
     ['destacado_dias','Días que dura el destacado'],
     ['anuncio_meses','Meses que dura un anuncio'],
