@@ -478,7 +478,7 @@ function abrirPublicar(){
   imgsSel = [];
   let opts = S.cats.map(function(c){return '<option>'+esc(c)+'</option>';}).join('');
   abrirModal('<h3>📢 Publicar producto</h3>'+
-    '<div class="alerta">Tu anuncio estará visible por 3 meses. Las fotos se comprimen solas para que pesen poco.</div>'+
+    '<div class="alerta">Publicar cuesta <b id="p_precio_pub">…</b>. Tu anuncio se mostrará cuando se confirme tu pago y estará visible por 3 meses. Las fotos se comprimen solas para que pesen poco.</div>'+
     '<label>Título</label><input type="text" id="p_tit" maxlength="80">'+
     '<label>Categoría</label><select id="p_cat">'+opts+'</select>'+
     '<div style="display:flex;gap:12px"><div style="flex:1"><label>Precio</label><input type="number" id="p_pre" min="1" step="any"></div>'+
@@ -490,10 +490,13 @@ function abrirPublicar(){
     '<label>Teléfono de contacto</label><input type="tel" id="p_tel" value="'+esc(S.user.telefono||'')+'">'+
     '<label class="radiofila" style="font-weight:400"><input type="checkbox" id="p_wa" checked> Tengo WhatsApp en ese número</label>'+
     '<label>Municipio</label><input type="text" id="p_mun" placeholder="Ej: Ciénaga de Zapata">'+
-    '<button class="btn bloque" id="btnPub" onclick="hacerPublicar()">Publicar anuncio</button><div id="pErr"></div>');
+    '<button class="btn bloque" id="btnPub" onclick="irAPagoPublicar()">Continuar al pago →</button><div id="pErr"></div>');
   document.getElementById('p_pre').addEventListener('input', prevConv);
   document.querySelectorAll('input[name=p_mon]').forEach(function(r){ r.addEventListener('change', prevConv); });
   document.getElementById('p_imgs').addEventListener('change', previsualizar);
+  api('destacar_info', {}).then(function(d){
+    if(d.ok) document.getElementById('p_precio_pub').textContent = fmtCUP(d.publicar_precio_cup)+' CUP';
+  });
 }
 function prevConv(){
   const v = Number(document.getElementById('p_pre').value)||0;
@@ -540,25 +543,53 @@ async function comprimirImagen(file){
   for(let i=0;i<bytes.length;i+=PASO) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+PASO));
   return {tipo:tipo, datos:btoa(bin)};
 }
-async function hacerPublicar(){
-  const btn = document.getElementById('btnPub');
-  btn.disabled = true; btn.textContent = '⏳ Publicando…';
-  const mon = document.querySelector('input[name=p_mon]:checked').value;
-  const r = await api('producto_create', {
-    titulo:document.getElementById('p_tit').value,
-    categoria:document.getElementById('p_cat').value,
-    precio:document.getElementById('p_pre').value,
-    moneda:mon,
-    descripcion:document.getElementById('p_desc').value,
-    telefono:document.getElementById('p_tel').value,
-    whatsapp:document.getElementById('p_wa').checked?'1':'',
-    municipio:document.getElementById('p_mun').value,
-    imagenes:imgsSel
-  });
-  btn.disabled = false; btn.textContent = 'Publicar anuncio';
-  if(!r.ok){ document.getElementById('pErr').innerHTML = '<div class="error">'+esc(r.error)+'</div>'; return; }
-  cerrarModal(); alert('✅ Anuncio publicado por 3 meses.');
-  S.cat=''; S.q=''; pintarCats(); cargarProductos(); mostrar('inicio');
+async function irAPagoPublicar(){
+  const tit = document.getElementById('p_tit').value.trim();
+  const pre = Number(document.getElementById('p_pre').value);
+  if(!tit){ document.getElementById('pErr').innerHTML = '<div class="error">Escribe el título del producto.</div>'; return; }
+  if(!(pre>0)){ document.getElementById('pErr').innerHTML = '<div class="error">Escribe un precio válido.</div>'; return; }
+  const datos = {
+    titulo: tit,
+    categoria: document.getElementById('p_cat').value,
+    precio: document.getElementById('p_pre').value,
+    moneda: document.querySelector('input[name=p_mon]:checked').value,
+    descripcion: document.getElementById('p_desc').value,
+    telefono: document.getElementById('p_tel').value,
+    whatsapp: document.getElementById('p_wa').checked?'1':'',
+    municipio: document.getElementById('p_mun').value,
+    imagenes: imgsSel
+  };
+  const d = await api('destacar_info', {});
+  if(!d.ok){ document.getElementById('pErr').innerHTML = '<div class="error">'+esc(d.error)+'</div>'; return; }
+  const m = d.metodos;
+  const prCUP = fmtCUP(d.publicar_precio_cup)+' CUP', prUSD = '$'+fmtUSD(d.publicar_precio_cup/S.tasa.tasa)+' USD';
+  window._pubDatos = datos;
+  abrirModal('<h3>💰 Pagar publicación: '+esc(tit)+'</h3>'+
+    '<div class="alerta">Costo de publicar: <b>'+prCUP+'</b> (≈ '+prUSD+').<br>Tu anuncio se mostrará cuando el administrador confirme tu pago.</div>'+
+    '<div class="metodo"><h4>📱 Transfermóvil</h4>'+
+      (m.transfermovil? 'Transfiere a la cuenta <code>'+esc(m.transfermovil)+'</code> y escribe el # de transacción abajo.'
+                      : '<span class="nota">Número pendiente — pregúntame por WhatsApp.</span>')+'</div>'+
+    '<div class="metodo"><h4>💠 USDT (TRC20)</h4>Envía a:<br><code>'+esc(m.usdt)+'</code>'+
+      '<button class="mini-btn copiar" onclick="navigator.clipboard.writeText(\''+esc(m.usdt)+'\');this.textContent=\'✓\'">Copiar</button></div>'+
+    '<div class="metodo"><h4>🤝 Efectivo</h4>'+esc(m.efectivo)+'</div>'+
+    '<label>Método que usaste</label><select id="pp_met">'+
+      '<option value="transfermovil">Transfermóvil</option><option value="usdt">USDT</option><option value="efectivo">Efectivo</option></select>'+
+    '<label># de transacción o referencia</label><input type="text" id="pp_ref" placeholder="Ej: 12345678">'+
+    '<button class="btn bloque" id="btnEnvPub" onclick="enviarPublicar()">Enviar solicitud</button><div id="ppErr"></div>'+
+    '<div class="nota">El anuncio se publica cuando se verifique tu pago.</div>');
+}
+async function enviarPublicar(){
+  const datos = window._pubDatos;
+  if(!datos) return;
+  const btn = document.getElementById('btnEnvPub');
+  btn.disabled = true; btn.textContent = '⏳ Enviando…';
+  datos.metodo = document.getElementById('pp_met').value;
+  datos.referencia = document.getElementById('pp_ref').value;
+  const r = await api('producto_create', datos);
+  btn.disabled = false; btn.textContent = 'Enviar solicitud';
+  if(!r.ok){ document.getElementById('ppErr').innerHTML = '<div class="error">'+esc(r.error)+'</div>'; return; }
+  cerrarModal(); alert('✅ '+r.msg);
+  mostrar('mios');
 }
 
 /* ================= mis anuncios ================= */
@@ -568,13 +599,16 @@ async function cargarMios(){
   const box = document.getElementById('misLista');
   if(!r.ok){ box.innerHTML = '<div class="error">'+esc(r.error)+'</div>'; return; }
   if(!r.productos.length){ box.innerHTML = '<div class="vacio">Aún no tienes anuncios.<br><button class="btn" onclick="abrirPublicar()">📢 Publicar el primero</button></div>'; return; }
-  box.innerHTML = '<table><tr><th>Anuncio</th><th>Precio</th><th>Vence</th><th></th></tr>'+
+  box.innerHTML = '<table><tr><th>Anuncio</th><th>Precio</th><th>Estado</th><th></th></tr>'+
     r.productos.map(function(p){
       const pr = precios(p);
+      const est = p.estado==='pendiente' ? '⏳ En espera de pago'
+                : p.activo ? '✅ Publicado (vence '+esc(p.fecha_exp)+')'
+                : '⌛ Vencido';
       return '<tr><td>'+(p.destacado?'<span class="badge-dest">⭐</span> ':'')+esc(p.titulo)+'</td>'+
-        '<td>'+pr.main+'</td><td>'+esc(p.fecha_exp)+(p.activo?'':' (vencido)')+'</td>'+
-        '<td><button class="mini-btn" onclick="destacarModal(\''+p.id+'\',\''+esc(p.titulo).replace(/'/g,"\\'")+'\')">⭐ Destacar</button>'+
-        '<button class="mini-btn" onclick="renovar(\''+p.id+'\')">🔄 Renovar</button>'+
+        '<td>'+pr.main+'</td><td>'+est+'</td>'+
+        '<td>'+(p.activo? '<button class="mini-btn" onclick="destacarModal(\''+p.id+'\',\''+esc(p.titulo).replace(/'/g,"\\'")+'\')">⭐ Destacar</button>'+
+        '<button class="mini-btn" onclick="renovar(\''+p.id+'\')">🔄 Renovar</button>':'')+
         '<button class="mini-btn no" onclick="eliminarProd(\''+p.id+'\')">🗑</button></td></tr>';
     }).join('')+'</table>';
 }
@@ -653,15 +687,16 @@ async function adminPagos(){
   const pend = r.pagos.filter(function(p){return p.estado==='pendiente';});
   const hist = r.pagos.filter(function(p){return p.estado!=='pendiente';}).slice(0,20);
   box.innerHTML = '<h3>Pendientes ('+pend.length+')</h3>'+
-    (pend.length? '<table><tr><th>Fecha</th><th>Anuncio</th><th>Usuario</th><th>Método</th><th>Ref.</th><th>Monto</th><th></th></tr>'+
+    (pend.length? '<table><tr><th>Fecha</th><th>Tipo</th><th>Anuncio</th><th>Usuario</th><th>Método</th><th>Ref.</th><th>Monto</th><th></th></tr>'+
     pend.map(function(p){
-      return '<tr><td>'+esc(p.fecha)+'</td><td>'+esc(p.titulo)+'</td><td>'+esc(p.usuario)+'</td><td>'+esc(p.metodo)+
+      const tipo = p.tipo==='publicar' ? '📢 Publicar' : '⭐ Destacar';
+      return '<tr><td>'+esc(p.fecha)+'</td><td>'+tipo+'</td><td>'+esc(p.titulo)+'</td><td>'+esc(p.usuario)+'</td><td>'+esc(p.metodo)+
         '</td><td>'+esc(p.referencia)+'</td><td>'+fmtCUP(p.monto_cup)+' CUP</td>'+
         '<td><button class="mini-btn ok" onclick="pagoDecision(\''+p.id+'\',1)">✓ Aprobar</button>'+
         '<button class="mini-btn no" onclick="pagoDecision(\''+p.id+'\',0)">✕</button></td></tr>';
     }).join('')+'</table>' : '<div class="vacio">Sin pagos pendientes.</div>')+
-    (hist.length? '<h3 style="margin-top:18px">Historial</h3><table><tr><th>Fecha</th><th>Anuncio</th><th>Método</th><th>Estado</th></tr>'+
-    hist.map(function(p){return '<tr><td>'+esc(p.fecha)+'</td><td>'+esc(p.titulo)+'</td><td>'+esc(p.metodo)+'</td><td>'+esc(p.estado)+'</td></tr>';}).join('')+'</table>':'');
+    (hist.length? '<h3 style="margin-top:18px">Historial</h3><table><tr><th>Fecha</th><th>Tipo</th><th>Anuncio</th><th>Método</th><th>Estado</th></tr>'+
+    hist.map(function(p){return '<tr><td>'+esc(p.fecha)+'</td><td>'+(p.tipo==='publicar'?'📢':'⭐')+'</td><td>'+esc(p.titulo)+'</td><td>'+esc(p.metodo)+'</td><td>'+esc(p.estado)+'</td></tr>';}).join('')+'</table>':'');
 }
 async function pagoDecision(id, ok){
   const r = await api(ok?'pago_aprobar':'pago_rechazar', {id:id});
@@ -722,10 +757,11 @@ async function adminAjustes(){
   if(!r.ok){ box.innerHTML = '<div class="error">'+esc(r.error)+'</div>'; return; }
   const c = r.config;
   const campos = [
+    ['publicar_precio_cup','Precio por publicar un anuncio (CUP)'],
     ['destacado_precio_cup','Precio del destacado (CUP)'],
     ['destacado_dias','Días que dura el destacado'],
-    ['anuncio_meses','Meses que dura un anuncio gratis'],
-    ['pago_transfermovil_numero','Número Transfermóvil'],
+    ['anuncio_meses','Meses que dura un anuncio'],
+    ['pago_transfermovil_numero','Número Transfermóvil (cuenta CUP)'],
     ['pago_usdt_direccion','Dirección USDT (TRC20)'],
     ['pago_efectivo_nota','Nota para pago en efectivo']
   ];
@@ -735,7 +771,7 @@ async function adminAjustes(){
   }).join('')+'<button class="btn" onclick="guardarAjustes()">Guardar ajustes</button><div id="aErr"></div>';
 }
 async function guardarAjustes(){
-  const campos = ['destacado_precio_cup','destacado_dias','anuncio_meses','pago_transfermovil_numero','pago_usdt_direccion','pago_efectivo_nota'];
+  const campos = ['publicar_precio_cup','destacado_precio_cup','destacado_dias','anuncio_meses','pago_transfermovil_numero','pago_usdt_direccion','pago_efectivo_nota'];
   for(const k of campos){
     const r = await api('config_set', {clave:k, valor:document.getElementById('cfg_'+k).value});
     if(!r.ok){ document.getElementById('aErr').innerHTML='<div class="error">'+esc(r.error)+'</div>'; return; }
