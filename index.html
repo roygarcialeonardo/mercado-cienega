@@ -528,7 +528,7 @@ function abrirPublicar(){
     '<div><label>Moneda</label><div class="radiofila"><label><input type="radio" name="p_mon" value="CUP" checked> CUP</label><label><input type="radio" name="p_mon" value="USD"> USD</label></div></div></div>'+
     '<div class="nota" id="p_conv"></div>'+
     '<label>Descripción</label><textarea id="p_desc" maxlength="2000"></textarea>'+
-    '<label>Fotos (máx 8)</label><input type="file" id="p_imgs" accept="image/*" multiple>'+
+    '<label>Foto</label><input type="file" id="p_imgs" accept="image/*">'+
     '<div class="prev-imgs" id="p_prev"></div><div class="nota" id="p_peso"></div>'+
     '<label>Teléfono de contacto</label><input type="tel" id="p_tel" value="'+esc(S.user.telefono||'')+'">'+
     '<label class="radiofila" style="font-weight:400"><input type="checkbox" id="p_wa" checked> Tengo WhatsApp en ese número</label>'+
@@ -555,7 +555,7 @@ function prevConv(){
   else el.textContent = '';
 }
 async function previsualizar(){
-  const files = Array.prototype.slice.call(document.getElementById('p_imgs').files, 0, 8);
+  const files = Array.prototype.slice.call(document.getElementById('p_imgs').files, 0, 1);
   const prev = document.getElementById('p_prev');
   prev.innerHTML = '⏳ Comprimiendo…';
   imgsSel = [];
