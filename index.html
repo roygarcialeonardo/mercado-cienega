@@ -473,6 +473,49 @@ async function finalizarPedido(){
 
 /* ================= publicar ================= */
 let imgsSel = [];
+/* ===== detección automática de categoría por palabras clave ===== */
+let catManual = false, imgsNombres = [];
+const CAT_CLAVES = {
+ 'Alimentos': ['arroz','pollo','carne','leche','huevo','pan','queso','cafe','azucar','aceite','frijol','vianda','fruta','verdura','pescado','embutido','dulce','galleta','refresco','ron','comida','pizza','helado','manteca','sal','pasta','harina','tomate','cebolla','ajo','platano','mango','pina','jugo','vino','jamon','chorizo','yogurt','mantequilla','miel','chocolate','croqueta','hamburguesa','malta','alimento','cerveza'],
+ 'Ropa y calzado': ['camisa','pantalon','zapato','tenis','sandalia','vestido','blusa','falda','short','jean','chaqueta','abrigo','gorra','sombrero','bota','zapatilla','traje','corbata','cinturon','calcetin','blumer','ajustador','pullover','chancleta','mocasin','ropa','calzado'],
+ 'Electrónica': ['telefono','celular','movil','laptop','computadora','tablet','audifono','bocina','parlante','televisor','pantalla','cargador','teclado','mouse','monitor','impresora','camara','dron','smartwatch','consola','videojuego','playstation','xbox','nintendo','ventilador','refrigerador','nevera','lavadora','microondas','split','licuadora','batidora','olla arrocera','olla reina','router','wifi','electronica','cable usb'],
+ 'Hogar': ['mueble','silla','mesa','cama','sofa','lampara','cortina','alfombra','colchon','almohada','sabana','toalla','olla','sarten','plato','vaso','cuchillo','tenedor','cuchara','cuadro','espejo','maceta','estante','closet','armario','puerta','ventana','juego de sala','juego de comedor','gavetero','hogar','decoracion'],
+ 'Belleza y cuidado': ['perfume','colonia','crema','maquillaje','labial','champu','jabon','desodorante','cosmetico','tinte','cabello','esmalte','rimmel','polvo facial','crema dental','cepillo dental','afeitadora','rasuradora','acondicionador','belleza'],
+ 'Servicios': ['reparacion','plomero','electricista','albanil','carpintero','clases','curso','tutoria','transporte','flete','mudanza','alquiler','peluqueria','barbero','manicura','pedicura','masaje','fotografo','diseno','costura','instalacion','servicio','se ofrece','arreglo'],
+ 'Vehículos y repuestos': ['carro','auto','moto','motocicleta','bicicleta','camion','neumatico','goma','bateria de carro','freno','bujia','vehiculo','repuesto','amortiguador','radiador','carburador','llanta','parabrisa','transmision','cloche','motor de'],
+ 'Mascotas': ['perro','gato','mascota','pienso','jaula','pecera','pez','pajaro','loro','periquito','hamster','conejo','correa','collar','arena para gato','cachorro','gatito','veterinaria'],
+ 'Otros': []
+};
+function normK(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function detectarCategoria(){
+  const t0 = document.getElementById('p_tit'), d0 = document.getElementById('p_desc');
+  const txt = ' '+normK((t0?t0.value:'')+' '+(d0?d0.value:'')+' '+imgsNombres.join(' '))+' ';
+  const words = normK((t0?t0.value:'')+' '+(d0?d0.value:'')+' '+imgsNombres.join(' ')).split(/[^a-z0-9]+/).filter(Boolean);
+  let best=null, sc1=0, sc2=0;
+  for(const cat in CAT_CLAVES){
+    let sc=0; const ks=CAT_CLAVES[cat];
+    for(let i=0;i<ks.length;i++){
+      const k=ks[i]; let hit=false;
+      if(k.indexOf(' ')>=0){ hit = txt.indexOf(' '+k+' ')>=0; }
+      else{
+        for(let w=0;w<words.length;w++){
+          const wd=words[w];
+          if(wd===k || (wd.indexOf(k)===0 && wd.length<=k.length+2)){ hit=true; break; }
+        }
+      }
+      if(hit) sc += (k.indexOf(' ')>=0 ? 2 : 1);
+    }
+    if(sc>sc1){ sc2=sc1; sc1=sc; best=cat; } else if(sc>sc2){ sc2=sc; }
+  }
+  return {cat:best, score:sc1, margen:sc1-sc2};
+}
+function autoCategoria(){
+  if(catManual) return;
+  const d = detectarCategoria();
+  const sel = document.getElementById('p_cat'), nota = document.getElementById('p_catnota');
+  if(d.cat && d.score>=2 && sel){ sel.value=d.cat; if(nota) nota.textContent='🤖 Categoría detectada: '+d.cat+' — puedes cambiarla si no es correcta.'; }
+  else if(nota){ nota.textContent=''; }
+}
 function abrirPublicar(){
   if(!S.user){ exigirLogin('Entra o crea tu cuenta para publicar tus productos.'); return; }
   imgsSel = [];
@@ -480,7 +523,7 @@ function abrirPublicar(){
   abrirModal('<h3>📢 Publicar producto</h3>'+
     '<div class="alerta">Publicar cuesta <b id="p_precio_pub">…</b>. Tu anuncio se mostrará cuando se confirme tu pago y estará visible por 1 mes. Las fotos se comprimen solas para que pesen poco.</div>'+
     '<label>Título</label><input type="text" id="p_tit" maxlength="80">'+
-    '<label>Categoría</label><select id="p_cat">'+opts+'</select>'+
+    '<label>Categoría</label><select id="p_cat">'+opts+'</select><div class="nota" id="p_catnota"></div>'+
     '<div style="display:flex;gap:12px"><div style="flex:1"><label>Precio</label><input type="number" id="p_pre" min="1" step="any"></div>'+
     '<div><label>Moneda</label><div class="radiofila"><label><input type="radio" name="p_mon" value="CUP" checked> CUP</label><label><input type="radio" name="p_mon" value="USD"> USD</label></div></div></div>'+
     '<div class="nota" id="p_conv"></div>'+
@@ -494,6 +537,11 @@ function abrirPublicar(){
   document.getElementById('p_pre').addEventListener('input', prevConv);
   document.querySelectorAll('input[name=p_mon]').forEach(function(r){ r.addEventListener('change', prevConv); });
   document.getElementById('p_imgs').addEventListener('change', previsualizar);
+  catManual = false; imgsNombres = [];
+  document.getElementById('p_cat').value = 'Otros';
+  document.getElementById('p_cat').addEventListener('change', function(){ catManual=true; document.getElementById('p_catnota').textContent=''; });
+  document.getElementById('p_tit').addEventListener('input', autoCategoria);
+  document.getElementById('p_desc').addEventListener('input', autoCategoria);
   api('destacar_info', {}).then(function(d){
     if(d.ok) document.getElementById('p_precio_pub').textContent = fmtCUP(d.publicar_precio_cup)+' CUP';
   });
@@ -522,6 +570,8 @@ async function previsualizar(){
   prev.innerHTML = imgsSel.map(function(){ return '<span style="font-size:2rem">🖼️</span>'; }).join('');
   document.getElementById('p_peso').textContent = imgsSel.length ?
     imgsSel.length+' foto(s) listas · pesan ~'+Math.round(peso/1024)+' KB en total (comprimidas)' : '';
+  imgsNombres = files.map(function(f){ return f.name; });
+  autoCategoria();
 }
 /* Comprime: mantiene la proporción (panorámica o retrato), baja el lado
    mayor a 1280 px y exporta en WebP (o JPEG) para que pese poco. */
@@ -548,6 +598,13 @@ async function irAPagoPublicar(){
   const pre = Number(document.getElementById('p_pre').value);
   if(!tit){ document.getElementById('pErr').innerHTML = '<div class="error">Escribe el título del producto.</div>'; return; }
   if(!(pre>0)){ document.getElementById('pErr').innerHTML = '<div class="error">Escribe un precio válido.</div>'; return; }
+  // detección/corrección de categoría antes de continuar
+  const selCat = document.getElementById('p_cat');
+  const det = detectarCategoria();
+  if(!catManual && det.cat && det.score>=1){ selCat.value = det.cat; }
+  else if(det.cat && det.score>=3 && det.margen>=2 && det.cat!==selCat.value){
+    if(confirm('🤖 Este anuncio parece ser de "'+det.cat+'". ¿Lo muevo a esa categoría?')) selCat.value = det.cat;
+  }
   const datos = {
     titulo: tit,
     categoria: document.getElementById('p_cat').value,
