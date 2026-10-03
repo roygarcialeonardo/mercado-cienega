@@ -477,12 +477,12 @@ let imgsSel = [];
 let catManual = false, imgsNombres = [];
 const CAT_CLAVES = {
  'Alimentos': ['arroz','pollo','carne','leche','huevo','pan','queso','cafe','azucar','aceite','frijol','vianda','fruta','verdura','pescado','embutido','dulce','galleta','refresco','ron','comida','pizza','helado','manteca','sal','pasta','harina','tomate','cebolla','ajo','platano','mango','pina','jugo','vino','jamon','chorizo','yogurt','mantequilla','miel','chocolate','croqueta','hamburguesa','malta','alimento','cerveza'],
- 'Ropa y calzado': ['camisa','pantalon','zapato','tenis','sandalia','vestido','blusa','falda','short','jean','chaqueta','abrigo','gorra','sombrero','bota','zapatilla','traje','corbata','cinturon','calcetin','blumer','ajustador','pullover','chancleta','mocasin','ropa','calzado'],
- 'Electrónica': ['telefono','celular','movil','laptop','computadora','tablet','audifono','bocina','parlante','televisor','pantalla','cargador','teclado','mouse','monitor','impresora','camara','dron','smartwatch','consola','videojuego','playstation','xbox','nintendo','ventilador','refrigerador','nevera','lavadora','microondas','split','licuadora','batidora','olla arrocera','olla reina','router','wifi','electronica','cable usb'],
+ 'Ropa y calzado': ['camisa','pantalon','zapato','tenis','sandalia','vestido','blusa','falda','short','jean','chaqueta','abrigo','gorra','sombrero','bota','zapatilla','traje','corbata','cinturon','calcetin','blumer','ajustador','pullover','chancleta','mocasin','ropa','calzado','deportivo','deportiva','talla','talle','licra','mezclilla'],
+ 'Electrónica': ['telefono','celular','movil','laptop','computadora','tablet','audifono','bocina','parlante','televisor','pantalla','cargador','teclado','mouse','monitor','impresora','camara','dron','smartwatch','consola','videojuego','playstation','xbox','nintendo','ventilador','refrigerador','nevera','lavadora','microondas','split','licuadora','batidora','olla arrocera','olla reina','router','wifi','electronica','cable usb','pulgadas','smart'],
  'Hogar': ['mueble','silla','mesa','cama','sofa','lampara','cortina','alfombra','colchon','almohada','sabana','toalla','olla','sarten','plato','vaso','cuchillo','tenedor','cuchara','cuadro','espejo','maceta','estante','closet','armario','puerta','ventana','juego de sala','juego de comedor','gavetero','hogar','decoracion'],
  'Belleza y cuidado': ['perfume','colonia','crema','maquillaje','labial','champu','jabon','desodorante','cosmetico','tinte','cabello','esmalte','rimmel','polvo facial','crema dental','cepillo dental','afeitadora','rasuradora','acondicionador','belleza'],
- 'Servicios': ['reparacion','plomero','electricista','albanil','carpintero','clases','curso','tutoria','transporte','flete','mudanza','alquiler','peluqueria','barbero','manicura','pedicura','masaje','fotografo','diseno','costura','instalacion','servicio','se ofrece','arreglo'],
- 'Vehículos y repuestos': ['carro','auto','moto','motocicleta','bicicleta','camion','neumatico','goma','bateria de carro','freno','bujia','vehiculo','repuesto','amortiguador','radiador','carburador','llanta','parabrisa','transmision','cloche','motor de'],
+ 'Servicios': ['reparacion','plomero','electricista','albanil','carpintero','clases','curso','tutoria','transporte','flete','mudanza','alquiler','peluqueria','barbero','manicura','pedicura','masaje','fotografo','diseno','costura','instalacion','servicio','se ofrece','arreglo','domicilio'],
+ 'Vehículos y repuestos': ['carro','auto','moto','motocicleta','bicicleta','camion','neumatico','goma','bateria de carro','freno','bujia','vehiculo','repuesto','amortiguador','radiador','carburador','llanta','parabrisa','transmision','cloche','motor de','electrica'],
  'Mascotas': ['perro','gato','mascota','pienso','jaula','pecera','pez','pajaro','loro','periquito','hamster','conejo','correa','collar','arena para gato','cachorro','gatito','veterinaria'],
  'Otros': []
 };
@@ -513,7 +513,7 @@ function autoCategoria(){
   if(catManual) return;
   const d = detectarCategoria();
   const sel = document.getElementById('p_cat'), nota = document.getElementById('p_catnota');
-  if(d.cat && d.score>=2 && sel){ sel.value=d.cat; if(nota) nota.textContent='🤖 Categoría detectada: '+d.cat+' — puedes cambiarla si no es correcta.'; }
+  if(d.cat && d.score>=1 && sel){ sel.value=d.cat; if(nota) nota.textContent='🤖 Categoría detectada: '+d.cat+' — puedes cambiarla si no es correcta.'; }
   else if(nota){ nota.textContent=''; }
 }
 function abrirPublicar(){
@@ -602,7 +602,7 @@ async function irAPagoPublicar(){
   const selCat = document.getElementById('p_cat');
   const det = detectarCategoria();
   if(!catManual && det.cat && det.score>=1){ selCat.value = det.cat; }
-  else if(det.cat && det.score>=3 && det.margen>=2 && det.cat!==selCat.value){
+  else if(det.cat && det.score>=2 && det.margen>=1 && det.cat!==selCat.value){
     if(confirm('🤖 Este anuncio parece ser de "'+det.cat+'". ¿Lo muevo a esa categoría?')) selCat.value = det.cat;
   }
   const datos = {
