@@ -911,7 +911,7 @@ function pintarUser(){
   
   
 (function(){var l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href='favicon.svg';document.head.appendChild(l);}())();
-  (a  sync function init(){
+  (async function init(){
   cargarSesion(); pintarUser(); actualizarN();
   await cargarTasa();
   await recargarCats(); pintarCats();
