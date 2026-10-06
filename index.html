@@ -121,7 +121,7 @@ footer b{color:#fff;}
 .carrusel .izq{left:10px;} .carrusel .der{right:10px;}
 .carrusel .puntos{position:absolute; bottom:12px; left:0; right:0; text-align:center; z-index:2;}
 .carrusel .puntos span{display:inline-block; width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.5); margin:0 4px; cursor:pointer;}
-.carrusel .puntos span.act{background:#fff;}
+/* Indicador de conexión con Google Sheets */ .conn-badge{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:600;padding:.28rem .65rem;border-radius:999px;background:rgba(255,255,255,.14);vertical-align:middle;color:#fff;white-space:nowrap} .conn-dot{width:.65rem;height:.65rem;border-radius:50%;display:inline-block;flex:none} .conn-dot.conn-green{background:#22c55e;box-shadow:0 0 8px #22c55e} .conn-dot.conn-red{background:#ef4444;box-shadow:0 0 8px #ef4444}
 @media(max-width:600px){ .hfila{gap:8px;} .logo{font-size:1.2rem;} .tasa{display:none;}
 .carrusel{height:168px;} .carrusel .leyenda{padding:28px 14px 12px;} .carrusel .leyenda h3{font-size:1.05rem;} .carrusel .leyenda p{font-size:.8rem;} }
 </style>
@@ -135,7 +135,7 @@ footer b{color:#fff;}
       <input id="q" type="text" placeholder="Buscar productos…" onkeydown="if(event.key==='Enter')buscar()">
       <button onclick="buscar()">🔍</button>
     </div>
-    <div class="tasa" id="tasaBadge" title="Tasa de referencia">USD: …</div>
+    <div class="tasa" id="tasaBadge" title="Tasa de referencia">USD: …</div>     <span id="connBadge" class="conn-badge" title="Estado de la conexión con Google Sheets"><span id="connDot" class="conn-dot conn-red"></span><span id="connText">Sin conexión</span></span>
     <button class="hbtn" onclick="abrirPublicar()">＋ Vender</button>
     <button class="hbtn" onclick="toggleCarrito()">🛒<span class="n" id="cartN" style="display:none">0</span></button>
     <button class="hbtn" id="btnUser" onclick="abrirAuth()">👤 Entrar</button>
@@ -226,12 +226,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbx-14QKrkUgOBeanPdsDp-3
 const S = { user:null, token:null, tasa:{tasa:770, fecha:'2026-10-02', fuente:'El Toque'},
             cats:[], prods:[], cat:'', q:'', carrito:[] };
 
-/* ================= API ================= */
-async function api(action, data){
-  data = data||{};
-  const r = await fetch(API_URL, {method:'POST', body:JSON.stringify(Object.assign({action:action, token:S.token}, data))});
-  return r.json();
-}
+/* ================= API ================= */ function setConn(ok){ const d=document.getElementById('connDot'),t=document.getElementById('connText'),b=document.getElementById('connBadge'); if(!d||!t||!b) return; d.className='conn-dot '+(ok?'conn-green':'conn-red'); t.textContent=ok?'Conectado':'Sin conexión'; b.title=ok?'Conexión con Google Sheets establecida':'Sin conexión con Google Sheets'; } async function api(action, data){ data = data||{}; try{ const r = await fetch(API_URL, {method:'POST', body:JSON.stringify(Object.assign({action:action, token:S.token}, data))}); const j = await r.json(); setConn(true); return j; }catch(e){ setConn(false); throw e; } }
 
 /* ================= formato ================= */
 function fmtCUP(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
