@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Test</title></head><body>
+<div id="r" style="font-size:20px;padding:20px">Probando...</div>
+<script>
+var t0 = Date.now();
+fetch('https://script.google.com/macros/s/AKfycbx-14QKrkUgOBeanPdsDp-3_PVlmJYMVyinJvR7lzJGpm0wa8ATBRmHmctj-JHbhOj7/exec',
+  {method:'POST', body:JSON.stringify({action:'tasa_get'})})
+.then(function(r){ return r.text().then(function(t){ return 'HTTP '+r.status+'; '; }); })
+.then(function(info){
+  document.getElementById('r').textContent = 'OK ('+((Date.now()-t0)/1000)+'s): '+info;
+})
+.catch(function(e){
+  document.getElementById('r').textContent = 'FALLO ('+((Date.now()-t0)/1000)+'s): '+e.message;
+});
+setTimeout(function(){
+  var el = document.getElementById('r');
+  if(el.textContent === 'Probando...') el.textContent = 'COLGADO: sin respuesta en 25s';
+}, 25000);
+</script>
+</body></html>
